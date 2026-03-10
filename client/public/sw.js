@@ -1,16 +1,15 @@
-const CACHE_NAME = 'hydra-v1'
+const CACHE_NAME = 'hydra-v2'
 const STATIC_ASSETS = [
     '/',
-    '/download',
     '/manifest.json',
 ]
 
 // Install — cache shell
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(STATIC_ASSETS)
-        })
+        caches.open(CACHE_NAME)
+            .then((cache) => cache.addAll(STATIC_ASSETS))
+            .catch((err) => console.warn('SW install cache error:', err))
     )
     self.skipWaiting()
 })
@@ -31,16 +30,17 @@ self.addEventListener('activate', (event) => {
 
 // Fetch — network first, fallback to cache
 self.addEventListener('fetch', (event) => {
-    // Skip API calls and SSE
-    if (event.request.url.includes('/api/')) {
+    const url = new URL(event.request.url)
+
+    // Skip API calls, SSE streams, and non-GET requests
+    if (url.pathname.startsWith('/api/') || event.request.method !== 'GET') {
         return
     }
 
     event.respondWith(
         fetch(event.request)
             .then((response) => {
-                // Cache successful responses
-                if (response.ok) {
+                if (response.ok && response.type === 'basic') {
                     const clone = response.clone()
                     caches.open(CACHE_NAME).then((cache) => {
                         cache.put(event.request, clone)
@@ -50,6 +50,7 @@ self.addEventListener('fetch', (event) => {
             })
             .catch(() => {
                 return caches.match(event.request)
+                    .then((cached) => cached || caches.match('/'))
             })
     )
 })

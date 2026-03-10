@@ -2,23 +2,36 @@
     "name": "PlaylistHydra",
     "short_name": "Hydra",
     "description": "YouTube playlist downloader — convert videos to MP3/MP4 with batch processing",
-    "start_url": "/download",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
-    "theme_color": "#7DA2FF",
-    "background_color": "#F0F3F9",
+    "theme_color": "#A5B452",
+    "background_color": "#F2F2EA",
     "orientation": "any",
     "icons": [
         {
             "src": "/icon-192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
             "src": "/icon-512.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ],
     "categories": [
