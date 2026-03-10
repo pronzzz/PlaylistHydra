@@ -169,11 +169,20 @@ export function downloadVideo(videoId, format, quality, outputDir, onProgress) {
         const sanitizedId = sanitizeForShell(videoId)
         const url = `https://www.youtube.com/watch?v=${sanitizedId}`
 
+        console.log(`[download] Starting: ${videoId} → ${format}/${quality} → ${outputDir}`)
+
         await fs.mkdir(outputDir, { recursive: true })
 
         const outputTemplate = path.join(outputDir, '%(title)s.%(ext)s')
 
-        const args = ['--newline', '--no-warnings', '-o', outputTemplate]
+        const args = [
+            '--newline',
+            '--no-warnings',
+            '--no-check-certificates',
+            '--prefer-free-formats',
+            '--no-playlist',
+            '-o', outputTemplate,
+        ]
 
         if (format === 'mp3') {
             args.push('-x', '--audio-format', 'mp3')
@@ -198,11 +207,15 @@ export function downloadVideo(videoId, format, quality, outputDir, onProgress) {
 
         args.push(url)
 
+        console.log(`[download] yt-dlp args: ${args.join(' ')}`)
+
         const proc = spawn('yt-dlp', args, { timeout: 600_000 })
         let stderr = ''
+        let stdout = ''
 
         proc.stdout.on('data', (data) => {
             const line = data.toString().trim()
+            stdout += line + '\n'
             const match = line.match(/\[download\]\s+([\d.]+)%/)
             if (match && onProgress) {
                 onProgress(parseFloat(match[1]))
@@ -213,13 +226,18 @@ export function downloadVideo(videoId, format, quality, outputDir, onProgress) {
 
         proc.on('close', (code) => {
             if (code === 0) {
+                console.log(`[download] ✅ Completed: ${videoId}`)
                 resolve({ success: true, videoId })
             } else {
-                reject(new Error(`Download failed for ${videoId}: ${stderr}`))
+                console.error(`[download] ❌ Failed: ${videoId} (exit code ${code})`)
+                console.error(`[download] stderr: ${stderr}`)
+                console.error(`[download] stdout: ${stdout}`)
+                reject(new Error(`Download failed for ${videoId}: ${stderr || stdout || 'Unknown error'}`))
             }
         })
 
         proc.on('error', (err) => {
+            console.error(`[download] ❌ Process error: ${videoId}: ${err.message}`)
             reject(new Error(`yt-dlp process error: ${err.message}`))
         })
     })
